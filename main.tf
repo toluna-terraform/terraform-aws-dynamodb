@@ -20,14 +20,6 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     type = var.primary_sort_key_type
   }
 
-  //  dynamic "attribute" {
-  //  for_each = var.attributes
-  //  content {
-  //      name = attribute.key
-  //      type = attribute.value
-  //  }
-  //  }
-
     global_secondary_index {
     name               = var.secondary_index_name
     hash_key           = var.primary_sort_key
