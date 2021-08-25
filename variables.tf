@@ -39,8 +39,3 @@ variable "read_capacity" {
 variable "write_capacity" {
   default = 5
 }
-
-variable "attributes" {
-    default = {"TemplateName" = "S","CustomerId" = "N"}
-}
-
