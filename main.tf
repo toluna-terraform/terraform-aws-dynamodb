@@ -1,6 +1,6 @@
 locals {
-  full_name = "dynamodb-${var.table_name}-${var.env_name}"
   env_name = split("-", var.env_name)[0]
+  full_name = "dynamodb-${var.table_name}-${local.env_name}"
 }
 
 resource "aws_dynamodb_table" "basic-dynamodb-table" {
@@ -32,6 +32,6 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
 
   tags = {
     Name        = local.full_name
-    Environment = var.env_name
+    Environment = local.env_name
   }
 }
