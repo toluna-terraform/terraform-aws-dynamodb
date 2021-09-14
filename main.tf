@@ -1,5 +1,6 @@
 locals {
   full_name = "dynamodb-${var.table_name}-${var.env_name}"
+  env_name = split("-", var.env_name)[0]
 }
 
 resource "aws_dynamodb_table" "basic-dynamodb-table" {
