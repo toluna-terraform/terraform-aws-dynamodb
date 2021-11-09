@@ -148,15 +148,12 @@ dynamo_backup() {
 }
 
 dynamo_put_item(){
-  for row in $(cat "/tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json" | jq -r '.Items[]'); do
-    echo $(jq '.UserId')
+  echo "Injecting Data, This may take a while please be patient..."
+  for k in $(jq '.Items | keys | .[]' /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json); do
+      value=$(jq -r ".Items[$k]" /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json);
+      echo $value > /tmp/item.json
+      aws dynamodb put-item --table-name dynamodb-${SERVICE_NAME}-${WORKSPACE} --profile $AWS_PROFILE --item file:///tmp/item.json
   done
-  #for k in $(jq '.Items' /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json); do
-  #    echo $k
-      #value=$(jq -r ".Items[]" /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json);
-      #value="'"$value"'"
-      #aws dynamodb put-item --table-name dynamodb-${SERVICE_NAME}-${WORKSPACE} --profile $AWS_PROFILE --item $(echo $value)
-  #done
 }
 
 
