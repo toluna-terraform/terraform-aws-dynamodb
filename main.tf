@@ -45,7 +45,7 @@ resource "null_resource" "db_backup" {
   count = var.backup_on_destroy ? 1 : 0
   triggers = {
     address = "${aws_dynamodb_table.basic-dynamodb-table.name}",
-    backup_file = "${data.template_file.dynamo_backup.rendered}",
+    backup_file = "${data.template_file.dynamo_backup.rendered}"
   }
 
   provisioner "local-exec" {
@@ -58,6 +58,16 @@ resource "null_resource" "db_backup" {
   ]
 }
 
-## on destroy backup to s3 cli and remove old if exists
-## on copy backup to source bucket - restore to target s3 cli
-## on restore  restore to target s3 cli
+resource "null_resource" "db_restore" {
+  count = var.restore_on_create ? 1 : 0
+  triggers = {
+    address = "${aws_dynamodb_table.basic-dynamodb-table.name}",
+    backup_file = "${data.template_file.dynamo_restore.rendered}"
+  }
+  provisioner "local-exec" {
+    command = "${path.module}/files/${data.template_file.dynamo_restore.rendered}"
+  }
+  depends_on = [
+    aws_dynamodb_table.basic-dynamodb-table, data.template_file.dynamo_restore
+  ]
+}

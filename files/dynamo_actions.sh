@@ -7,20 +7,21 @@ unset ACTION_TYPE
 unset WORKSPACE
 unset ENV_TYPE
 unset AWS_PROFILE
-unset TABLE_ARN
 unset INIT_DB_ENVIRONMENT
-
+unset SOURCE_WORKSPACE
+unset SOURCE_ENV_TYPE
+unset SOURCE_AWS_PROFILE
 
 usage() {
   cat <<EOM
     Usage:
-    dynamo_actions.sh -s|--service_name <SERVICE_NAME> -a|--action <dynamo_backup/dynamo_restore> -w|--workspace <Terraform workspace> -e|--env_type <prod/non-prod> -p|--profile <AWS_PROFILE> -dbh|--dbhost <dynamo DB URI> -dbu|--dbuser db username -dbp|--dbpass db password -dbs|--source_db <source workspace to copy DB from on restore(optional)> -sdbu|--sdbuser source db user -sdbp|--sdbpass source db password -l|locaL [true||false] is script runing from local or remote system
+    dynamo_actions.sh -s|--service_name <SERVICE_NAME> -a|--action <dynamo_backup/dynamo_restore> -w|--workspace <Terraform workspace> -e|--env_type <prod/non-prod> -p|--profile <AWS_PROFILE> -se|--src_env source environment to copy from -setype|--src_env_type the source environment type to copy from [prod|non-prod] -sp|src_profile source profile when running from local
     I.E. for backup 
-    dynamo_actions.sh --service_name myService --action dynamo_backup --workspace my-data --env_type non-prod --profile my-aws-profile --dbhost dynamodb+srv://my-dynamodb-connection-string --dbuser myUser --dbpass myPassword -local true
+    dynamo_actions.sh --service_name myService --action dynamo_backup --workspace my-data --env_type non-prod --profile my-aws-profile
     I.E. for restore
-    dynamo_actions.sh --service_name myService --action dynamo_restore --workspace my-data --env_type non-prod --profile my-aws-profile --dbhost dynamodb+srv://my-dynamodb-connection-string  --dbuser myUser --dbpass myPassword --source_db test-data --sdbh sourceDBHOST --sdbuser sourceUser --sdbpass sourcePassword -local true
+    dynamo_actions.sh --service_name myService --action dynamo_restore --workspace my-data --env_type non-prod --profile my-aws-profile
     I.E. for clone
-    dynamo_actions.sh --service_name myService --action dynamo_restore --workspace my-data --env_type non-prod --profile my-aws-profile --dbhost dynamodb+srv://my-dynamodb-connection-string  --dbuser myUser --dbpass myPassword --source_db test-data --sdbh sourceDBHOST --sdbuser sourceUser --sdbpass sourcePassword -local true
+    dynamo_actions.sh --service_name myService --action dynamo_restore --workspace my-data --env_type non-prod --profile my-aws-profile -se myCopyDb -sp my_source_profile --setype non-prod
 EOM
     exit 1
 }
@@ -54,21 +55,24 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
-    -starn|--starn)
+    -se|--src_env)
       if [[ "$2" == "NULL" ]];
       then 
           unset INIT_DB_ENVIRONMENT
       else 
           INIT_DB_ENVIRONMENT="$2"
+          SOURCE_WORKSPACE="$2"
       fi
       shift # past argument
       shift # past value
       ;;
-    -l|--local)
-      if [[ "$2" == "true" ]];
-      then 
-          LOCAL_RUN="$2"
-      fi
+    -setype|--src_env_type)
+      SOURCE_ENV_TYPE="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    -sp|--src_profile)
+      SOURCE_AWS_PROFILE="$2"
       shift # past argument
       shift # past value
       ;;
@@ -88,29 +92,40 @@ done
 : ${WORKSPACE:?Missing -w|--workspace type -h for help}
 : ${ENV_TYPE:?Missing -e|--env_type type -h for help}
 
-LOCAL_RUN=true
-### VALIDATE dynamoDB URI FORMAT ###
-if [[ -z "$LOCAL_RUN" ]]; then
-  unset AWS_PROFILE
+if [[ ! -z "$INIT_DB_ENVIRONMENT" ]]; then
+  : ${SOURCE_WORKSPACE:?Missing -se|--src_env type -h for help}
+  : ${SOURCE_ENV_TYPE:?Missing -setype|--src_env_type type -h for help}
 fi
 
-if [[ -z "$LOCAL_RUN" ]]; then
+spin() {
+   local -a marks=( '/' '-' '\' '|' )
+   while [[ 1 ]]; do
+     printf '%s\r' "${marks[i++ % ${#marks[@]}]}"
+     sleep 1
+   done
+ }
+
+### VALIDATE IF RUNNING LOCAL OR REMOTE ###
+profile_status=$( (aws configure list --profile $AWS_PROFILE) 2>&1) || true
+echo $profile_status
+if [[ $profile_status = *'could not be found'* ]]; then
+  unset LOCAL_RUN
   echo "Running on remote server"
 else
-  echo "Running localy"
+  LOCAL_RUN=true
+  echo "Running locally"
 fi
-
 ### VALIDATE DUMP EXISTS FOR RESTORE ###
 if [[ "${ACTION_TYPE}" == "dynamo_restore" ]]; then
   if [[ -z "$LOCAL_RUN" ]]; then
-    aws s3api head-object --bucket "${SERVICE_NAME}-${ENV_TYPE}-dynamodb-dumps" --key $WORKSPACE/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json || object_not_exist=true 
+    object_not_exist=$( (aws s3api head-object --bucket "${SERVICE_NAME}-${ENV_TYPE}-dynamodb-dumps" --key $WORKSPACE/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json) 2>&1) || true 
   else
-    aws s3api head-object --bucket "${SERVICE_NAME}-${ENV_TYPE}-dynamodb-dumps" --key $WORKSPACE/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json --profile $AWS_PROFILE --no-cli-pager || object_not_exist=true 
+    object_not_exist=$( (aws s3api head-object --bucket "${SERVICE_NAME}-${ENV_TYPE}-dynamodb-dumps" --key $WORKSPACE/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json --profile $AWS_PROFILE) 2>&1) || true 
   fi
-  if [[ $object_not_exist && -z "${INIT_DB_ENVIRONMENT}" ]]; then
+  if [[ $object_not_exist == *'Not Found'* && -z "${INIT_DB_ENVIRONMENT}" ]]; then
       echo "Dump file not found not performing restore"
       exit 0
-  elif [[ $object_not_exist && -n "${INIT_DB_ENVIRONMENT}" ]]
+  elif [[ -n "${INIT_DB_ENVIRONMENT}" ]]
   then
       ACTION_TYPE="dynamo_clone"
   else
@@ -150,21 +165,26 @@ dynamo_backup() {
 dynamo_put_item(){
   echo "Injecting Data, This may take a while please be patient..."
   for k in $(jq '.Items | keys | .[]' /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json); do
+  spin
       value=$(jq -r ".Items[$k]" /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json);
       echo $value > /tmp/item.json
-      aws dynamodb put-item --table-name dynamodb-${SERVICE_NAME}-${WORKSPACE} --profile $AWS_PROFILE --item file:///tmp/item.json
+      if [[ -z "$LOCAL_RUN" ]]; then
+        aws dynamodb put-item --table-name dynamodb-${SERVICE_NAME}-${WORKSPACE} --item file:///tmp/item.json
+      else
+        aws dynamodb put-item --table-name dynamodb-${SERVICE_NAME}-${WORKSPACE} --profile $AWS_PROFILE --item file:///tmp/item.json
+      fi
   done
+  rm -f /tmp/item.json
+  echo "Done importing Data."
 }
 
 
 dynamo_clone() {
   echo "Copying init db..."
   if [[ -z "$LOCAL_RUN" ]]; then
-    echo "to copy"
-    aws s3 cp s3://${SERVICE_NAME}-${SOURCE_ENV_TYPE}-dynamodb-dumps/$SOURCE_WORKSPACE/dynamodb-${SERVICE_NAME}-${SOURCE_WORKSPACE}.json /tmp/ --profile $SOURCE_AWS_PROFILE
-   else
-    echo "to copy"
-    aws s3 cp s3://${SERVICE_NAME}-${SOURCE_ENV_TYPE}-dynamodb-dumps/$SOURCE_WORKSPACE/dynamodb-${SERVICE_NAME}-${SOURCE_WORKSPACE}.json /tmp/
+    aws dynamodb scan --table-name dynamodb-${SERVICE_NAME}-${SOURCE_WORKSPACE} --region us-east-1 > /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json
+  else
+    aws dynamodb scan --table-name dynamodb-${SERVICE_NAME}-${SOURCE_WORKSPACE} --profile $SOURCE_AWS_PROFILE --region us-east-1 > /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json
   fi
   dynamo_put_item
   rm -f /tmp/dynamodb-${SERVICE_NAME}-${SOURCE_WORKSPACE}.json
