@@ -171,7 +171,6 @@ dynamo_put_item(){
   echo "Done importing Data."
 }
 
-
 dynamo_clone() {
   echo "Copying init db..."
   if [[ -z "$LOCAL_RUN" ]]; then
