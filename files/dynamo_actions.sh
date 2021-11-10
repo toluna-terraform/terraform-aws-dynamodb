@@ -116,7 +116,7 @@ if [[ "${ACTION_TYPE}" == "dynamo_restore" ]]; then
     object_not_exist=$( (aws s3api head-object --bucket "${SERVICE_NAME}-${ENV_TYPE}-dynamodb-dumps" --key $WORKSPACE/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json --profile $AWS_PROFILE) 2>&1) || true 
   fi
   if [[ $object_not_exist == *'Not Found'* && -z "${INIT_DB_ENVIRONMENT}" ]]; then
-      echo "Dump file not found not performing restore"
+      echo "Dump file not found not performing restore:::${INIT_DB_ENVIRONMENT}"
       exit 0
   elif [[ -n "${INIT_DB_ENVIRONMENT}" ]]
   then
