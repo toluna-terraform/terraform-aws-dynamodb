@@ -97,13 +97,6 @@ if [[ ! -z "$INIT_DB_ENVIRONMENT" ]]; then
   : ${SOURCE_ENV_TYPE:?Missing -setype|--src_env_type type -h for help}
 fi
 
-spin() {
-   local -a marks=( '/' '-' '\' '|' )
-   while [[ 1 ]]; do
-     printf '%s\r' "${marks[i++ % ${#marks[@]}]}"
-     sleep 1
-   done
- }
 
 ### VALIDATE IF RUNNING LOCAL OR REMOTE ###
 profile_status=$( (aws configure list --profile $AWS_PROFILE) 2>&1) || true
@@ -163,9 +156,9 @@ dynamo_backup() {
 }
 
 dynamo_put_item(){
-  echo "Injecting Data, This may take a while please be patient..."
+  local -a marks=( '/' '-' '\' '|' )
   for k in $(jq '.Items | keys | .[]' /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json); do
-  spin
+      printf 'Injecting Data, This may take a while please be patient...%s\r' "${marks[i++ % ${#marks[@]}]}"
       value=$(jq -r ".Items[$k]" /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json);
       echo $value > /tmp/item.json
       if [[ -z "$LOCAL_RUN" ]]; then
