@@ -1,5 +1,5 @@
 locals {
-  env_name = split("-", var.env_name)[0]
+  env_name = var.env_name
   full_name = "dynamodb-${var.table_name}-${local.env_name}"
 }
 
@@ -10,6 +10,10 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
   billing_mode   = "PROVISIONED"
   read_capacity  = var.read_capacity
   write_capacity = var.write_capacity
+
+  point_in_time_recovery {
+    enabled = true
+  }
 
   attribute {
     name = var.primary_key
@@ -34,4 +38,36 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     Name        = local.full_name
     Environment = local.env_name
   }
+}
+
+
+resource "null_resource" "db_backup" {
+  count = var.backup_on_destroy ? 1 : 0
+  triggers = {
+    address = "${aws_dynamodb_table.basic-dynamodb-table.name}",
+    backup_file = "${data.template_file.dynamo_backup.rendered}"
+  }
+
+  provisioner "local-exec" {
+    when       = destroy
+    on_failure = fail
+    command    = "${path.module}/files/${self.triggers.backup_file}"
+  }
+  depends_on = [
+    aws_dynamodb_table.basic-dynamodb-table, data.template_file.dynamo_backup
+  ]
+}
+
+resource "null_resource" "db_restore" {
+  count = var.restore_on_create ? 1 : 0
+  triggers = {
+    address = "${aws_dynamodb_table.basic-dynamodb-table.name}",
+    backup_file = "${data.template_file.dynamo_restore.rendered}"
+  }
+  provisioner "local-exec" {
+    command = "${path.module}/files/${data.template_file.dynamo_restore.rendered}"
+  }
+  depends_on = [
+    aws_dynamodb_table.basic-dynamodb-table, data.template_file.dynamo_restore
+  ]
 }
