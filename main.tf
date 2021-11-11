@@ -40,7 +40,7 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
 resource "null_resource" "db_backup" {
   count = var.backup_on_destroy ? 1 : 0
   triggers = {
-    address = "${aws_dynamodb_table.basic-dynamodb-table.name}",
+    name = "${aws_dynamodb_table.basic-dynamodb-table.name}",
     backup_file = "${data.template_file.dynamo_backup.rendered}"
   }
 
@@ -50,20 +50,19 @@ resource "null_resource" "db_backup" {
     command    = "${path.module}/files/${self.triggers.backup_file}"
   }
   depends_on = [
-    aws_dynamodb_table.basic-dynamodb-table, data.template_file.dynamo_backup
+    aws_dynamodb_table.basic-dynamodb-table,data.template_file.dynamo_backup
   ]
 }
 
 resource "null_resource" "db_restore" {
   count = var.restore_on_create ? 1 : 0
   triggers = {
-    address = "${aws_dynamodb_table.basic-dynamodb-table.name}",
-    backup_file = "${data.template_file.dynamo_restore.rendered}"
+    name = "${aws_dynamodb_table.basic-dynamodb-table.name}"
   }
   provisioner "local-exec" {
     command = "${path.module}/files/${data.template_file.dynamo_restore.rendered}"
   }
   depends_on = [
-    aws_dynamodb_table.basic-dynamodb-table, data.template_file.dynamo_restore
+    aws_dynamodb_table.basic-dynamodb-table,data.template_file.dynamo_restore
   ]
 }
