@@ -11,10 +11,6 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
   read_capacity  = var.read_capacity
   write_capacity = var.write_capacity
 
-  point_in_time_recovery {
-    enabled = true
-  }
-
   attribute {
     name = var.primary_key
     type = var.primary_key_type
