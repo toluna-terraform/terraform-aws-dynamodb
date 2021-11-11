@@ -23,20 +23,27 @@ None.
 module "dynamodb" {
   source                = "toluna-terraform/dynamodb/aws"
   version               = "~>0.0.1" // Change to the required version.
-  env_name              = local.environment
-  table_name            = "ServiceQuotas"
-  primary_key           = "TemplateId"
-  primary_key_type      = "S"
-  primary_sort_key      = "Entity"
-  primary_sort_key_type = "N"
-  secondary_index_name  = "Entity-index"
-  read_capacity         = 5
-  write_capacity        = 5
-  backup_on_destroy     = true
-  restore_on_create     = true
-  aws_profile           = local.aws_profile
-  env_type              = local.env_type
-  app_name              = local.app_name
+  env_name                   = local.environment
+  table_name                 = "quota-service"
+  primary_key                = "TemplateId"
+  primary_key_type           = "S"
+  primary_sort_key           = "Entity"
+  primary_sort_key_type      = "N"
+  secondary_index_name       = "Entity-index"
+  read_capacity              = local.read_capacity
+  write_capacity             = local.write_capacity
+  max_read_capacity          = local.max_read_capacity
+  max_write_capacity         = local.max_write_capacity
+  autoscaling_enabled        = local.autoscaling_enabled
+  target_utilization_percent = local.target_utilization_percent
+  backup_on_destroy          = true
+  restore_on_create          = true
+  aws_profile                = local.aws_profile
+  env_type                   = local.env_type
+  app_name                   = local.app_name
+  init_db_environment        = local.init_db_environment
+  init_db_aws_profile        = local.init_db_aws_profile
+  init_db_env_type           = local.init_db_env_type
 }
 ```
 
@@ -46,6 +53,7 @@ module "dynamodb" {
 backup_on_destroy     = boolean (true/false) default = true
 restore_on_create     = boolean (true/false) default = true
 init_db_environment   = string the name of the source environment to copy db from
+autoscaling_enabled   =  to use autoscaling for DB read/write capacity 
 ```
 
 if restore_on_create = true the following flow is used:

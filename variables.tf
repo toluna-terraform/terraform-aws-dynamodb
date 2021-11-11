@@ -70,3 +70,23 @@ variable "init_db_env_type" {
   default = "NULL"
   description = "Source envirnment aws profile to restore db from"
 } 
+
+variable "target_utilization_percent" {
+  default = 70
+  description = "Target utilization for read/write autoscaling capacity"
+}
+
+variable "max_write_capacity" {
+  default = 20
+  description = "Maximum write autoscaling capacity"
+}
+
+variable "max_read_capacity" {
+  default = 20
+  description = "Maximum read autoscaling capacity"
+}
+
+variable "autoscaling_enabled" {
+  default = false
+  description = "Use autoscaling for read/write capacity"
+}

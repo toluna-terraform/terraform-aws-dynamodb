@@ -37,6 +37,58 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
 }
 
 
+resource "aws_appautoscaling_target" "dynamodb_table_read_target" {
+  count = var.autoscaling_enabled ? 1 : 0
+  max_capacity       = var.max_read_capacity
+  min_capacity       = var.read_capacity
+  resource_id        = "table/${local.full_name}"
+  scalable_dimension = "dynamodb:table:ReadCapacityUnits"
+  service_namespace  = "dynamodb"
+}
+
+resource "aws_appautoscaling_policy" "dynamodb_table_read_policy" {
+  count = var.autoscaling_enabled ? 1 : 0
+  name               = "DynamoDBReadCapacityUtilization:${aws_appautoscaling_target.dynamodb_table_read_target[count.index].resource_id}"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.dynamodb_table_read_target[count.index].resource_id
+  scalable_dimension = aws_appautoscaling_target.dynamodb_table_read_target[count.index].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.dynamodb_table_read_target[count.index].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "DynamoDBReadCapacityUtilization"
+    }
+
+    target_value = var.target_utilization_percent
+  }
+}
+
+resource "aws_appautoscaling_target" "dynamodb_table_write_target" {
+  count = var.autoscaling_enabled ? 1 : 0
+  max_capacity       = var.max_write_capacity
+  min_capacity       = var.write_capacity
+  resource_id        = "table/${local.full_name}"
+  scalable_dimension = "dynamodb:table:WriteCapacityUnits"
+  service_namespace  = "dynamodb"
+}
+
+resource "aws_appautoscaling_policy" "dynamodb_table_write_policy" {
+  count = var.autoscaling_enabled ? 1 : 0
+  name               = "DynamoDBWriteCapacityUtilization:${aws_appautoscaling_target.dynamodb_table_write_target[count.index].resource_id}"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.dynamodb_table_write_target[count.index].resource_id
+  scalable_dimension = aws_appautoscaling_target.dynamodb_table_write_target[count.index].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.dynamodb_table_write_target[count.index].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "DynamoDBWriteCapacityUtilization"
+    }
+
+    target_value = var.target_utilization_percent
+  }
+}
+
 resource "null_resource" "db_backup" {
   count = var.backup_on_destroy ? 1 : 0
   triggers = {
