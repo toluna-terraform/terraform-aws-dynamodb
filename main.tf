@@ -115,6 +115,6 @@ resource "null_resource" "db_restore" {
     command = "${path.module}/files/${data.template_file.dynamo_restore.rendered}"
   }
   depends_on = [
-    aws_dynamodb_table.basic-dynamodb-table,data.template_file.dynamo_restore
+    aws_dynamodb_table.basic-dynamodb-table,data.template_file.dynamo_restore,aws_appautoscaling_policy.dynamodb_table_write_policy,aws_appautoscaling_policy.dynamodb_table_read_policy
   ]
 }
