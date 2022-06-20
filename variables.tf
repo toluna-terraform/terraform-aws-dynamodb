@@ -90,3 +90,9 @@ variable "autoscaling_enabled" {
   default = false
   description = "Use autoscaling for read/write capacity"
 }
+
+variable "billing_mode" {
+  type = string
+  description = "Indicates mode of billing. Value should be either PROVISIONED or PAY_PER_REQUEST"
+  default = "PROVISIONED"
+}

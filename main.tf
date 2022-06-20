@@ -7,9 +7,10 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
   name           = local.full_name
   hash_key       = var.primary_key
   range_key      = var.primary_sort_key
-  billing_mode   = "PROVISIONED"
-  read_capacity  = var.read_capacity
-  write_capacity = var.write_capacity
+  billing_mode   = var.billing_mode
+
+  read_capacity =  var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
+  write_capacity =  var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
 
   attribute {
     name = var.primary_key
@@ -21,11 +22,11 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     type = var.primary_sort_key_type
   }
 
-    global_secondary_index {
+  global_secondary_index {
     name               = var.secondary_index_name
     hash_key           = var.primary_sort_key
-    write_capacity     = 5
-    read_capacity      = 5
+    read_capacity =  var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
+    write_capacity =  var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
     projection_type    = "ALL"
     
   }
