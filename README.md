@@ -1,8 +1,9 @@
 # terraform-aws-dynamodb
 Toluna [Terraform module](https://registry.terraform.io/modules/toluna-terraform/dynamodb/aws/latest), which creates AWS DynamoDB table.
 
-### Description
+## Description
 This module supports persistency of DynamoDB, by creating/restoring dump files(json) to AWS s3 bucket, this is done by running a shell script upon apply and before destroy, the shell script starts an AWS Cli command to output the entire table to a json file, upon destroy and read the json file on create.
+
 The module also supports starting with a copy of the DB from another created environment (I.E. you can start a "DEV" environment with a copy of "QA" DB that resides on the same AWS account).
 The creation of dump files and restore/copy functions are triggered by terraform events (apply/destroy) based on the DynamoDB Table resource.
 
@@ -18,40 +19,53 @@ The following resources will be created:
 ## Requirements
 None.
 
-## Usage
+### Example Usage
 ```
 module "dynamodb" {
   source                = "toluna-terraform/dynamodb/aws"
-  version               = "~>0.0.1" // Change to the required version.
+  version               = "~>1.1.0" 
+  aws_profile                = local.aws_profile
+  app_name                   = local.app_name
+  env_type                   = local.env_type
   env_name                   = local.environment
+
   table_name                 = "quota-service"
   primary_key                = "TemplateId"
   primary_key_type           = "S"
   primary_sort_key           = "Entity"
   primary_sort_key_type      = "N"
   secondary_index_name       = "Entity-index"
+
+  billing_mode               = "PROVISONED"
   read_capacity              = local.read_capacity
   write_capacity             = local.write_capacity
   max_read_capacity          = local.max_read_capacity
   max_write_capacity         = local.max_write_capacity
   autoscaling_enabled        = local.autoscaling_enabled
   target_utilization_percent = local.target_utilization_percent
+
   backup_on_destroy          = true
   restore_on_create          = true
-  aws_profile                = local.aws_profile
-  env_type                   = local.env_type
-  app_name                   = local.app_name
+
   init_db_environment        = local.init_db_environment
   init_db_aws_profile        = local.init_db_aws_profile
   init_db_env_type           = local.init_db_env_type
 }
 ```
 
-## Toggles
+## Parameters
+`billing_mode = PROVISIONED | PAY_PER_REQUEST`
+
+PROVISIONED is for custom provisioning. PAY_PER_REQUEST is for on-demand provisioning. 
+
+certain parameters like read_capacity, etc., are applicable only for PROVISIONED billing_mode
+
+### Toggles
 #### Backup, Restore and Initial DB flags:
 ```yaml
 backup_on_destroy     = boolean (true/false) default = true
 restore_on_create     = boolean (true/false) default = true
+
 init_db_environment   = string the name of the source environment to copy db from
 autoscaling_enabled   =  to use autoscaling for DB read/write capacity 
 ```
