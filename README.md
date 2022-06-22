@@ -23,7 +23,7 @@ None.
 ```
 module "dynamodb" {
   source                = "toluna-terraform/dynamodb/aws"
-  version               = "~>0.0.1" 
+  version               = "~>1.1.0" 
   aws_profile                = local.aws_profile
   app_name                   = local.app_name
   env_type                   = local.env_type
@@ -56,12 +56,11 @@ module "dynamodb" {
 ## Parameters
 `billing_mode = PROVISIONED | PAY_PER_REQUEST`
 
-`PROVISIONED` is for custom provisioning, and 
-`PAY_PER_REQUEST` is for on-demand provisioning. 
+PROVISIONED is for custom provisioning. PAY_PER_REQUEST is for on-demand provisioning. 
 
-certain parameters like read_capacity, etc., are applicable only for `PROVISIONED billing_mode`
+certain parameters like read_capacity, etc., are applicable only for PROVISIONED billing_mode
 
-## Toggles
+### Toggles
 #### Backup, Restore and Initial DB flags:
 ```yaml
 backup_on_destroy     = boolean (true/false) default = true

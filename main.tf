@@ -1,6 +1,12 @@
 locals {
   env_name = var.env_name
-  full_name = "dynamodb-${var.table_name}-${local.env_name}"
+
+  # at different places, scripts are using app_name instead of table_name, 
+  # and expect user to give same value for app_name and table_name.
+  # Until code is refactored to use table_name appropriately, we will use app_name
+  # in all places, and ignore table_name variable, to avoid issues
+
+  full_name = "dynamodb-${var.app_name}-${local.env_name}"
 }
 
 resource "aws_dynamodb_table" "basic-dynamodb-table" {
@@ -113,6 +119,7 @@ resource "null_resource" "db_restore" {
     name = "${aws_dynamodb_table.basic-dynamodb-table.name}"
   }
   provisioner "local-exec" {
+    when    = create
     command = "${path.module}/files/${data.template_file.dynamo_restore.rendered}"
   }
   depends_on = [

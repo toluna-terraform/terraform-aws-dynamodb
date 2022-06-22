@@ -47,11 +47,13 @@ variable "aws_profile" {
 }
 
 variable "backup_on_destroy" {
+  type = bool
   default = true
   description = "Backup DB to S3"
 }
 
 variable "restore_on_create" {
+  type = bool
   default = true
   description = "Restore DB from dump file"
 }
