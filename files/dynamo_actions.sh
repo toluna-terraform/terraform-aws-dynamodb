@@ -11,11 +11,12 @@ unset INIT_DB_ENVIRONMENT
 unset SOURCE_WORKSPACE
 unset SOURCE_ENV_TYPE
 unset SOURCE_AWS_PROFILE
+unset TABLE_NAME
 
 usage() {
   cat <<EOM
     Usage:
-    dynamo_actions.sh -s|--service_name <SERVICE_NAME> -a|--action <dynamo_backup/dynamo_restore> -w|--workspace <Terraform workspace> -e|--env_type <prod/non-prod> -p|--profile <AWS_PROFILE> -se|--src_env source environment to copy from -setype|--src_env_type the source environment type to copy from [prod|non-prod] -sp|src_profile source profile when running from local
+    dynamo_actions.sh -s|--service_name <SERVICE_NAME> -a|--action <dynamo_backup/dynamo_restore> -w|--workspace <Terraform workspace> -e|--env_type <prod/non-prod> -p|--profile <AWS_PROFILE> -se|--src_env source environment to copy from -t table name -setype|--src_env_type the source environment type to copy from [prod|non-prod] -sp|src_profile source profile when running from local
     I.E. for backup 
     dynamo_actions.sh --service_name myService --action dynamo_backup --workspace my-data --env_type non-prod --profile my-aws-profile
     I.E. for restore
@@ -55,6 +56,11 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
+    -t|--table)
+      TABLE_NAME="$2"
+      shift # past argument
+      shift # past value
+      ;;
     -se|--src_env)
       if [[ "$2" == "NULL" ]];
       then 
@@ -91,7 +97,7 @@ done
 : ${ACTION_TYPE:?Missing -a|--action type -h for help}
 : ${WORKSPACE:?Missing -w|--workspace type -h for help}
 : ${ENV_TYPE:?Missing -e|--env_type type -h for help}
-
+: ${TABLE_NAME:?Missing -t|--table type -h for help}
 if [[ ! -z "$INIT_DB_ENVIRONMENT" ]]; then
   : ${SOURCE_WORKSPACE:?Missing -se|--src_env type -h for help}
   : ${SOURCE_ENV_TYPE:?Missing -setype|--src_env_type type -h for help}
@@ -146,10 +152,10 @@ dynamo_backup() {
     fi
   fi
   if [[ -z "$LOCAL_RUN" ]]; then
-    aws dynamodb scan --table-name dynamodb-${SERVICE_NAME}-${WORKSPACE} --region us-east-1 > /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json
+    aws dynamodb scan --table-name ${TABLE_NAME} --region us-east-1 > /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json
     aws s3 cp /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json s3://${SERVICE_NAME}-${ENV_TYPE}-dynamodb-dumps/$WORKSPACE/
   else
-    aws dynamodb scan --table-name dynamodb-${SERVICE_NAME}-${WORKSPACE} --profile $AWS_PROFILE --region us-east-1 > /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json
+    aws dynamodb scan --table-name ${TABLE_NAME} --profile $AWS_PROFILE --region us-east-1 > /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json
     aws s3 cp /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json s3://${SERVICE_NAME}-${ENV_TYPE}-dynamodb-dumps/$WORKSPACE/ --profile $AWS_PROFILE
   fi
   rm -f /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json
@@ -162,9 +168,9 @@ dynamo_put_item(){
       value=$(jq -r ".Items[$k]" /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json);
       echo $value > /tmp/item.json
       if [[ -z "$LOCAL_RUN" ]]; then
-        aws dynamodb put-item --table-name dynamodb-${SERVICE_NAME}-${WORKSPACE} --item file:///tmp/item.json
+        aws dynamodb put-item --table-name ${TABLE_NAME} --item file:///tmp/item.json
       else
-        aws dynamodb put-item --table-name dynamodb-${SERVICE_NAME}-${WORKSPACE} --profile $AWS_PROFILE --item file:///tmp/item.json
+        aws dynamodb put-item --table-name ${TABLE_NAME} --profile $AWS_PROFILE --item file:///tmp/item.json
       fi
   done
   rm -f /tmp/item.json
@@ -174,9 +180,9 @@ dynamo_put_item(){
 dynamo_clone() {
   echo "Copying init db..."
   if [[ -z "$LOCAL_RUN" ]]; then
-    aws dynamodb scan --table-name dynamodb-${SERVICE_NAME}-${SOURCE_WORKSPACE} --region us-east-1 > /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json
+    aws dynamodb scan --table-name ${TABLE_NAME} --region us-east-1 > /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json
   else
-    aws dynamodb scan --table-name dynamodb-${SERVICE_NAME}-${SOURCE_WORKSPACE} --profile $SOURCE_AWS_PROFILE --region us-east-1 > /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json
+    aws dynamodb scan --table-name ${TABLE_NAME} --profile $SOURCE_AWS_PROFILE --region us-east-1 > /tmp/dynamodb-${SERVICE_NAME}-${WORKSPACE}.json
   fi
   dynamo_put_item
   rm -f /tmp/dynamodb-${SERVICE_NAME}-${SOURCE_WORKSPACE}.json
