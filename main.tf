@@ -6,11 +6,11 @@ locals {
   # Until code is refactored to use table_name appropriately, we will use app_name
   # in all places, and ignore table_name variable, to avoid issues
 
-  full_name = "dynamodb-${var.app_name}-${local.env_name}"
+  table_name = try("${var.table_name}","dynamodb-${var.app_name}-${local.env_name}")
 }
 
 resource "aws_dynamodb_table" "basic-dynamodb-table" {
-  name           = local.full_name
+  name           = local.table_name
   hash_key       = var.primary_key
   range_key      = var.primary_sort_key
   billing_mode   = var.billing_mode
@@ -38,7 +38,7 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
   }
 
   tags = {
-    Name        = local.full_name
+    Name        = local.table_name
     Environment = local.env_name
   }
 }
@@ -48,7 +48,7 @@ resource "aws_appautoscaling_target" "dynamodb_table_read_target" {
   count = var.autoscaling_enabled ? 1 : 0
   max_capacity       = var.max_read_capacity
   min_capacity       = var.read_capacity
-  resource_id        = "table/${local.full_name}"
+  resource_id        = "table/${local.table_name}"
   scalable_dimension = "dynamodb:table:ReadCapacityUnits"
   service_namespace  = "dynamodb"
 }
@@ -74,7 +74,7 @@ resource "aws_appautoscaling_target" "dynamodb_table_write_target" {
   count = var.autoscaling_enabled ? 1 : 0
   max_capacity       = var.max_write_capacity
   min_capacity       = var.write_capacity
-  resource_id        = "table/${local.full_name}"
+  resource_id        = "table/${local.table_name}"
   scalable_dimension = "dynamodb:table:WriteCapacityUnits"
   service_namespace  = "dynamodb"
 }
