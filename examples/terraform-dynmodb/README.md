@@ -43,6 +43,7 @@ module "dynamodb" {
   init_db_environment        = local.init_db_environment
   init_db_aws_profile        = local.init_db_aws_profile
   init_db_env_type           = local.init_db_env_type
+  
   global_secondary_indeces   = [
     {
       name      = "Entity-TemplateId-index"
