@@ -98,3 +98,9 @@ variable "billing_mode" {
   description = "Indicates mode of billing. Value should be either PROVISIONED or PAY_PER_REQUEST"
   default = "PROVISIONED"
 }
+
+variable "global_secondary_indeces" {
+  type = any
+  description = "Array of GSI definitions"
+  default = []
+}
