@@ -33,6 +33,7 @@ module "dynamodb" {
     {
       name = "gsi_name"
       hash_key = "first_name"
+      hash_key_type = "S"
     }
   ]
 }

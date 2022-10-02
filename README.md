@@ -52,9 +52,10 @@ module "dynamodb" {
 
   global_secondary_indeces   = [
     {
-      name      = "Entity-TemplateId-index"
-      hash_key  = "Entity"
-      range_key = "TemplateId"
+      name          = "Entity-TemplateId-index"
+      hash_key      = "Entity"
+      hash_key_type = "N"
+      range_key     = "TemplateId"
     }
   ]
 }

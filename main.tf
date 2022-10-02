@@ -28,6 +28,15 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     type = var.primary_sort_key_type
   }
 
+  dynamic "attribute" {
+    for_each = var.global_secondary_indeces
+    iterator = index
+    content {
+      name = index.value.hash_key
+      type = index.value.hash_key_type
+    }
+  }
+
   dynamic "global_secondary_index" {
     for_each = var.global_secondary_indeces
     iterator = index
