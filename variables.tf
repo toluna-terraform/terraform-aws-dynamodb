@@ -26,10 +26,6 @@ variable "primary_sort_key_type" {
   type = string
 }
 
-variable "secondary_index_name" {
-  type = string
-}
-
 variable "read_capacity" {
   default = 5
 }

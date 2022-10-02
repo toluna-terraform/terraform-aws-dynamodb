@@ -13,7 +13,6 @@ module "dynamodb" {
   primary_key_type           = "S"
   primary_sort_key           = "first_name"
   primary_sort_key_type      = "S"
-  secondary_index_name       = "sec_index"
 
   read_capacity              = var.read_capacity
   write_capacity             = var.write_capacity
@@ -29,4 +28,11 @@ module "dynamodb" {
   # init_db_environment        = local.init_db_environment
   # init_db_aws_profile        = local.init_db_aws_profile
   # init_db_env_type           = local.init_db_env_type
+
+  global_secondary_indeces = [
+    {
+      name = "gsi_name"
+      hash_key = "first_name"
+    }
+  ]
 }
