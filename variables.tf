@@ -26,10 +26,6 @@ variable "primary_sort_key_type" {
   type = string
 }
 
-variable "secondary_index_name" {
-  type = string
-}
-
 variable "read_capacity" {
   default = 5
 }
@@ -97,4 +93,10 @@ variable "billing_mode" {
   type = string
   description = "Indicates mode of billing. Value should be either PROVISIONED or PAY_PER_REQUEST"
   default = "PROVISIONED"
+}
+
+variable "global_secondary_indeces" {
+  type = any
+  description = "Array of GSI definitions"
+  default = []
 }

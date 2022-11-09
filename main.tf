@@ -28,13 +28,26 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     type = var.primary_sort_key_type
   }
 
-  global_secondary_index {
-    name               = var.secondary_index_name
-    hash_key           = var.primary_sort_key
-    read_capacity =  var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
-    write_capacity =  var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
-    projection_type    = "ALL"
-    
+  dynamic "attribute" {
+    for_each = var.global_secondary_indeces
+    iterator = index
+    content {
+      name = index.value.hash_key
+      type = index.value.hash_key_type
+    }
+  }
+
+  dynamic "global_secondary_index" {
+    for_each = var.global_secondary_indeces
+    iterator = index
+    content {
+      name = index.value.name
+      hash_key = index.value.hash_key
+      range_key = try(index.value.range_key, null)
+      read_capacity =  var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
+      write_capacity =  var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
+      projection_type    = "ALL"
+    }
   }
 
   tags = {
