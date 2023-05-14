@@ -20,10 +20,11 @@ variable "primary_key_type"{
 
 variable "primary_sort_key" {
   type = string
+  default = null
 }
 
 variable "primary_sort_key_type" {
-  type = string
+  default = null
 }
 
 variable "read_capacity" {
