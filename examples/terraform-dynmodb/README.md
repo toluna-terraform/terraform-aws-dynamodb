@@ -46,10 +46,25 @@ module "dynamodb" {
 
   global_secondary_indeces   = [
     {
-      name      = "Entity-TemplateId-index"
-      hash_key  = "Entity"
+      name          = "Entity-TemplateId-index"
+      hash_key      = "Entity"
       hash_key_type = "N"
-      range_key = "TemplateId"
+      range_key     = "TemplateId"
+    },
+    {
+      name            = "CustomerId-TemplateId-index"
+      hash_key        = "CustomerId"
+      hash_key_type   = "N"
+      range_key       = "TemplateId"
+      projection_type = "INCLUDE"
+      non_key_attributes = ["UserId","IsDeleted"]
+    },
+    {
+      name            = "UserId-TemplateId-index"
+      hash_key        = "UserId"
+      hash_key_type   = "N"
+      range_key       = "TemplateId",
+      projection_type = "KEYS_ONLY"
     }
   ]
 }
