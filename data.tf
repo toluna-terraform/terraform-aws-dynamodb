@@ -3,14 +3,7 @@ data "aws_s3_bucket_objects" "get_dump_list" {
   prefix = "${var.env_name}/dynamodb-${var.app_name}-${var.env_name}.json"
 }
 
-data "aws_s3_bucket_object" "get_dump_data" {
-  count  = length(data.aws_s3_bucket_objects.get_dump_list.keys)
-  bucket = data.aws_s3_bucket_objects.get_dump_list.bucket
-  key    = data.aws_s3_bucket_objects.get_dump_list.keys[0]
-    depends_on = [
-    data.aws_s3_bucket_objects.get_dump_list
-  ]
-}
+
 
 data "template_file" "dynamo_backup" {
   template = "${file("${path.module}/files/dynamo_backup.tpl")}"

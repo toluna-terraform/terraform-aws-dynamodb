@@ -23,9 +23,13 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     type = var.primary_key_type
   }
 
-  attribute {
-    name = var.primary_sort_key
-    type = var.primary_sort_key_type
+  dynamic "attribute" {
+     for_each = var.primary_sort_key != null ? [1] : []
+     iterator = index
+     content {
+      name = var.primary_sort_key
+      type = var.primary_sort_key_type
+    }
   }
 
   dynamic "attribute" {
