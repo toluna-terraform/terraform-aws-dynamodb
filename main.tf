@@ -46,11 +46,11 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     iterator = index
     content {
       name = index.value.name
-      hash_key        = index.value.hash_key
-      range_key       = try(index.value.range_key, null)
-      read_capacity   =  var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
-      write_capacity  =  var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
-      projection_type = try(index.value.projection_type, "ALL")
+      hash_key           = index.value.hash_key
+      range_key          = try(index.value.range_key, null)
+      read_capacity      =  var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
+      write_capacity     =  var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
+      projection_type    = try(index.value.projection_type, "ALL")
       non_key_attributes = try(index.value.non_key_attributes, null)
     }
   }
