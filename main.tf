@@ -41,6 +41,18 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     }
   }
 
+  dynamic "attribute" {
+    for_each = [
+      for i in var.global_secondary_indeces : i
+      if can(i.range_key)
+    ]
+    iterator = index
+    content {
+      name = index.value.range_key
+      type = index.value.range_key_type
+    }
+  }
+
   dynamic "global_secondary_index" {
     for_each = var.global_secondary_indeces
     iterator = index
