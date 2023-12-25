@@ -105,10 +105,10 @@ variable "global_secondary_indeces" {
 variable "ttl_value" {
   type = bool
   default = false 
-  description = "time to leave"
+  description = "Time to leave"
 }
 
 variable "ttl_attribute_name" {
   type = string
-  default = ""
+  default = "TimeToExist"
 }
