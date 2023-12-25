@@ -108,7 +108,7 @@ variable "ttl_value" {
   description = "time to leave"
 }
 
-value "ttl_attribute_name" {
+variable "ttl_attribute_name" {
   type = string
   default = ""
 }
