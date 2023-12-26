@@ -50,6 +50,9 @@ module "dynamodb" {
   init_db_aws_profile        = local.init_db_aws_profile
   init_db_env_type           = local.init_db_env_type
 
+  ttl_attribute_name         = "TTL"
+  ttl_value                  = true
+
   global_secondary_indeces   = [
     {
       name           = "Entity-TemplateId-index"
