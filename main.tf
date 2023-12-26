@@ -66,6 +66,11 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
       non_key_attributes = try(index.value.non_key_attributes, null)
     }
   }
+  
+  ttl {
+    attribute_name = var.ttl_attribute_name
+    enabled        = var.ttl_value
+  }
 
   tags = {
     Name        = local.table_name
