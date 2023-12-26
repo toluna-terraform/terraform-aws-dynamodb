@@ -65,6 +65,11 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
       projection_type    = "ALL"
     }
   }
+  
+  ttl {
+    attribute_name = var.ttl_attribute_name
+    enabled        = var.ttl_value
+  }
 
   tags = {
     Name        = local.table_name
