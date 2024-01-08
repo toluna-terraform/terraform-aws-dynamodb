@@ -57,6 +57,23 @@ module "dynamodb" {
       hash_key_type  = "N"
       range_key      = "TemplateId"
       range_key_type = "S"
+    },
+    {
+      name           = "CustomerId-TemplateId-index"
+      hash_key       = "CustomerId"
+      hash_key_type  = "N"
+      range_key      = "TemplateId"
+      range_key_type = "S"
+      projection_type = "KEYS_ONLY"
+    },
+    {
+      name           = "UserId-TemplateId-index"
+      hash_key       = "UserId"
+      hash_key_type  = "N"
+      range_key      = "TemplateId"
+      range_key_type = "S"
+      projection_type = "INCLUDE"
+      non_key_attributes = [ "CreateDate", "Entity" ]
     }
   ]
 }
