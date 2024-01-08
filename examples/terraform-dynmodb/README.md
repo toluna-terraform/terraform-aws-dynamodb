@@ -43,6 +43,8 @@ module "dynamodb" {
   init_db_environment        = local.init_db_environment
   init_db_aws_profile        = local.init_db_aws_profile
   init_db_env_type           = local.init_db_env_type
+  ttl_attribute_name         = "TTL"
+  ttl_value                  = true
 
   global_secondary_indeces   = [
     {
@@ -51,6 +53,23 @@ module "dynamodb" {
       hash_key_type  = "N"
       range_key      = "TemplateId"
       range_key_type = "S"
+    },
+    {
+      name           = "CustomerId-TemplateId-index"
+      hash_key       = "CustomerId"
+      hash_key_type  = "N"
+      range_key      = "TemplateId"
+      range_key_type = "S"
+      projection_type = "KEYS_ONLY"
+    },
+    {
+      name           = "UserId-TemplateId-index"
+      hash_key       = "UserId"
+      hash_key_type  = "N"
+      range_key      = "TemplateId"
+      range_key_type = "S"
+      projection_type = "INCLUDE"
+      non_key_attributes = [ "CreateDate", "Entity" ]
     }
   ]
 }
