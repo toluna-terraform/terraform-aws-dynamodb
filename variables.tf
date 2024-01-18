@@ -101,14 +101,3 @@ variable "global_secondary_indeces" {
   description = "Array of GSI definitions"
   default = []
 }
-
-variable "ttl_value" {
-  type = bool
-  default = false 
-  description = "time to leave"
-}
-
-value "ttl_attribute_name" {
-  type = string
-  default = ""
-}
