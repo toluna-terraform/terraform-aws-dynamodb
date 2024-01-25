@@ -110,5 +110,5 @@ variable "ttl_value" {
 
 variable "ttl_attribute_name" {
   type = string
-  default = "TimeToExist"
+  default = "created_at"
 }

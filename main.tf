@@ -7,6 +7,12 @@ locals {
   # in all places, and ignore table_name variable, to avoid issues
 
   table_name = try("${var.table_name}","dynamodb-${var.app_name}-${local.env_name}")
+  ttl = (var.ttl_enable == true ? [
+  {
+    ttl_enable = var.ttl_enable
+    ttl_attribute : var.ttl_attribute_name
+  }
+] : [])
 }
 
 resource "aws_dynamodb_table" "basic-dynamodb-table" {
@@ -67,9 +73,12 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     }
   }
   
-  ttl {
-    attribute_name = var.ttl_attribute_name
-    enabled        = var.ttl_value
+  dynamic "ttl" {
+    for_each = local.ttl
+    content {
+      enabled        = local.ttl[0].ttl_enable
+      attribute_name = local.ttl[0].ttl_attribute_name
+    }
   }
 
   tags = {
