@@ -102,13 +102,7 @@ variable "global_secondary_indeces" {
   default = []
 }
 
-variable "ttl_value" {
-  type = bool
-  default = false 
-  description = "Time to leave"
-}
-
 variable "ttl_attribute_name" {
   type = string
-  default = "created_at"
+  default = null
 }
