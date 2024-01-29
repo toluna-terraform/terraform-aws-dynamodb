@@ -50,8 +50,7 @@ module "dynamodb" {
   init_db_aws_profile        = local.init_db_aws_profile
   init_db_env_type           = local.init_db_env_type
 
-  ttl_attribute_name         = "TTL"
-  ttl_value                  = true
+  ttl_attribute_name         = "created_at"
 
   global_secondary_indeces   = [
     {
@@ -81,7 +80,13 @@ module "dynamodb" {
   ]
 }
 ```
+## Important notes.
+By providing `ttl_attribute_name` you enabling the TTL on you dynamodb table.<br>
+FYI this option have some limitation set by AWS:<br>
+* Once you set `ttl_attribute_name` attribute you cannot immediatly change it to other value you will need to wait around one hour.
+* If you will remove `ttl_attribute_name` attribute from your `dynamodb.tf` it will not turn off the TTL on your table.
 
+For more information visit [this](https://github.com/hashicorp/terraform-provider-aws/issues/10304) opened bug.<br>
 ## Parameters
 `billing_mode = PROVISIONED | PAY_PER_REQUEST`
 
