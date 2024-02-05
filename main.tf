@@ -1,12 +1,20 @@
 locals {
-  env_name = var.env_name
-
+  app_name                       = var.app_name == null ? var.dynamodb_config.app_name : var.app_name
+  env_name                       = var.env_name == null ? var.dynamodb_config.env_name : var.env_name
+  env_type                       = var.env_type == null ? var.dynamodb_config.env_type : var.env_type
+  aws_profile                    = var.aws_profile == null ? var.dynamodb_config.aws_profile : var.aws_profile
+  write_capacity                 = var.write_capacity == null ? var.dynamodb_config.write_capacity : var.write_capacity
+  read_capacity                  = var.read_capacity == null ? var.dynamodb_config.read_capacity : var.read_capacity
+  max_write_capacity             = var.max_write_capacity == null ? var.dynamodb_config.max_write_capacity : var.max_write_capacity
+  max_read_capacity              = var.max_read_capacity == null ? var.dynamodb_config.max_read_capacity : var.max_read_capacity
+  autoscaling_enabled            = var.autoscaling_enabled == null ? var.dynamodb_config.autoscaling_enabled : var.autoscaling_enabled
+  target_utilization_percent     = var.target_utilization_percent == null ? var.dynamodb_config.target_utilization_percent : var.target_utilization_percent
   # at different places, scripts are using app_name instead of table_name, 
   # and expect user to give same value for app_name and table_name.
   # Until code is refactored to use table_name appropriately, we will use app_name
   # in all places, and ignore table_name variable, to avoid issues
 
-  table_name = try("${var.table_name}","dynamodb-${var.app_name}-${local.env_name}")
+  table_name = try("${var.table_name}","dynamodb-${local.app_name}-${local.env_name}")
 }
 
 resource "aws_dynamodb_table" "basic-dynamodb-table" {
@@ -15,8 +23,8 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
   range_key      = var.primary_sort_key
   billing_mode   = var.billing_mode
 
-  read_capacity =  var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
-  write_capacity =  var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
+  read_capacity =  var.billing_mode == "PROVISIONED" ? local.read_capacity :  null
+  write_capacity =  var.billing_mode == "PROVISIONED" ? local.write_capacity :  null
 
   attribute {
     name = var.primary_key
@@ -60,8 +68,8 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
       name = index.value.name
       hash_key = index.value.hash_key
       range_key = try(index.value.range_key, null)
-      read_capacity =  var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
-      write_capacity =  var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
+      read_capacity =  var.billing_mode == "PROVISIONED" ? local.read_capacity :  null
+      write_capacity =  var.billing_mode == "PROVISIONED" ? local.write_capacity :  null
       projection_type    = try(index.value.projection_type, "ALL")
       non_key_attributes = try(index.value.projection_type, "ALL") == "INCLUDE" ? try(index.value.non_key_attributes, null) : null
     }
@@ -84,16 +92,16 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
 
 
 resource "aws_appautoscaling_target" "dynamodb_table_read_target" {
-  count = var.autoscaling_enabled ? 1 : 0
-  max_capacity       = var.max_read_capacity
-  min_capacity       = var.read_capacity
+  count = local.autoscaling_enabled ? 1 : 0
+  max_capacity       = local.max_read_capacity
+  min_capacity       = local.read_capacity
   resource_id        = "table/${local.table_name}"
   scalable_dimension = "dynamodb:table:ReadCapacityUnits"
   service_namespace  = "dynamodb"
 }
 
 resource "aws_appautoscaling_policy" "dynamodb_table_read_policy" {
-  count = var.autoscaling_enabled ? 1 : 0
+  count = local.autoscaling_enabled ? 1 : 0
   name               = "DynamoDBReadCapacityUtilization:${aws_appautoscaling_target.dynamodb_table_read_target[count.index].resource_id}"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.dynamodb_table_read_target[count.index].resource_id
@@ -105,21 +113,21 @@ resource "aws_appautoscaling_policy" "dynamodb_table_read_policy" {
       predefined_metric_type = "DynamoDBReadCapacityUtilization"
     }
 
-    target_value = var.target_utilization_percent
+    target_value = local.target_utilization_percent
   }
 }
 
 resource "aws_appautoscaling_target" "dynamodb_table_write_target" {
-  count = var.autoscaling_enabled ? 1 : 0
-  max_capacity       = var.max_write_capacity
-  min_capacity       = var.write_capacity
+  count = local.autoscaling_enabled ? 1 : 0
+  max_capacity       = local.max_write_capacity
+  min_capacity       = local.write_capacity
   resource_id        = "table/${local.table_name}"
   scalable_dimension = "dynamodb:table:WriteCapacityUnits"
   service_namespace  = "dynamodb"
 }
 
 resource "aws_appautoscaling_policy" "dynamodb_table_write_policy" {
-  count = var.autoscaling_enabled ? 1 : 0
+  count = local.autoscaling_enabled ? 1 : 0
   name               = "DynamoDBWriteCapacityUtilization:${aws_appautoscaling_target.dynamodb_table_write_target[count.index].resource_id}"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.dynamodb_table_write_target[count.index].resource_id
@@ -131,7 +139,7 @@ resource "aws_appautoscaling_policy" "dynamodb_table_write_policy" {
       predefined_metric_type = "DynamoDBWriteCapacityUtilization"
     }
 
-    target_value = var.target_utilization_percent
+    target_value = local.target_utilization_percent
   }
 }
 
