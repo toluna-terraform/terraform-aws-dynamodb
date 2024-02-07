@@ -1,9 +1,14 @@
+variable "dynamodb_config" {
+}
+
 variable "env_name" {
   type = string
+  default  = null
 }
 
 variable "app_name" {
   type = string
+  default  = null
 }
 
 variable "table_name" {
@@ -24,7 +29,7 @@ variable "primary_sort_key" {
 }
 
 variable "primary_sort_key_type" {
-  default = null
+  default  = null
 }
 
 variable "read_capacity" {
@@ -36,10 +41,12 @@ variable "write_capacity" {
 }
 
 variable "env_type" {
+  default  = null
   type = string
 }
 
 variable "aws_profile" {
+  default  = null
   type = string
 }
 

@@ -161,3 +161,69 @@ No inputs.
 | Name | Value |
 |------|-------|
 | s3_dump_file | Details about the dump file created |
+
+<!-- BEGIN_TF_DOCS -->
+## Requirements
+
+No requirements.
+
+## Providers
+
+| Name | Version |
+|------|---------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | n/a |
+| <a name="provider_null"></a> [null](#provider\_null) | n/a |
+| <a name="provider_template"></a> [template](#provider\_template) | n/a |
+
+## Modules
+
+No modules.
+
+## Resources
+
+| Name | Type |
+|------|------|
+| [aws_appautoscaling_policy.dynamodb_table_read_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy) | resource |
+| [aws_appautoscaling_policy.dynamodb_table_write_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy) | resource |
+| [aws_appautoscaling_target.dynamodb_table_read_target](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_target) | resource |
+| [aws_appautoscaling_target.dynamodb_table_write_target](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_target) | resource |
+| [aws_dynamodb_table.basic-dynamodb-table](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/dynamodb_table) | resource |
+| [null_resource.db_backup](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.db_restore](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [aws_s3_bucket_objects.get_dump_list](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/s3_bucket_objects) | data source |
+| [template_file.dynamo_backup](https://registry.terraform.io/providers/hashicorp/template/latest/docs/data-sources/file) | data source |
+| [template_file.dynamo_restore](https://registry.terraform.io/providers/hashicorp/template/latest/docs/data-sources/file) | data source |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_app_name"></a> [app\_name](#input\_app\_name) | n/a | `string` | `null` | no |
+| <a name="input_autoscaling_enabled"></a> [autoscaling\_enabled](#input\_autoscaling\_enabled) | Use autoscaling for read/write capacity | `bool` | `false` | no |
+| <a name="input_aws_profile"></a> [aws\_profile](#input\_aws\_profile) | n/a | `string` | `null` | no |
+| <a name="input_backup_on_destroy"></a> [backup\_on\_destroy](#input\_backup\_on\_destroy) | Backup DB to S3 | `bool` | `true` | no |
+| <a name="input_billing_mode"></a> [billing\_mode](#input\_billing\_mode) | Indicates mode of billing. Value should be either PROVISIONED or PAY\_PER\_REQUEST | `string` | `"PROVISIONED"` | no |
+| <a name="input_dynamodb_config"></a> [dynamodb\_config](#input\_dynamodb\_config) | n/a | `any` | n/a | yes |
+| <a name="input_env_name"></a> [env\_name](#input\_env\_name) | n/a | `string` | `null` | no |
+| <a name="input_env_type"></a> [env\_type](#input\_env\_type) | n/a | `string` | `null` | no |
+| <a name="input_global_secondary_indeces"></a> [global\_secondary\_indeces](#input\_global\_secondary\_indeces) | Array of GSI definitions | `any` | `[]` | no |
+| <a name="input_init_db_aws_profile"></a> [init\_db\_aws\_profile](#input\_init\_db\_aws\_profile) | Source envirnment aws profile to restore db from | `string` | `"NULL"` | no |
+| <a name="input_init_db_env_type"></a> [init\_db\_env\_type](#input\_init\_db\_env\_type) | Source envirnment aws profile to restore db from | `string` | `"NULL"` | no |
+| <a name="input_init_db_environment"></a> [init\_db\_environment](#input\_init\_db\_environment) | Source envirnment name to restore db from | `string` | `"NULL"` | no |
+| <a name="input_max_read_capacity"></a> [max\_read\_capacity](#input\_max\_read\_capacity) | Maximum read autoscaling capacity | `number` | `20` | no |
+| <a name="input_max_write_capacity"></a> [max\_write\_capacity](#input\_max\_write\_capacity) | Maximum write autoscaling capacity | `number` | `20` | no |
+| <a name="input_primary_key"></a> [primary\_key](#input\_primary\_key) | n/a | `string` | n/a | yes |
+| <a name="input_primary_key_type"></a> [primary\_key\_type](#input\_primary\_key\_type) | n/a | `string` | n/a | yes |
+| <a name="input_primary_sort_key"></a> [primary\_sort\_key](#input\_primary\_sort\_key) | n/a | `string` | `null` | no |
+| <a name="input_primary_sort_key_type"></a> [primary\_sort\_key\_type](#input\_primary\_sort\_key\_type) | n/a | `any` | `null` | no |
+| <a name="input_read_capacity"></a> [read\_capacity](#input\_read\_capacity) | n/a | `number` | `5` | no |
+| <a name="input_restore_on_create"></a> [restore\_on\_create](#input\_restore\_on\_create) | Restore DB from dump file | `bool` | `true` | no |
+| <a name="input_table_name"></a> [table\_name](#input\_table\_name) | n/a | `string` | n/a | yes |
+| <a name="input_target_utilization_percent"></a> [target\_utilization\_percent](#input\_target\_utilization\_percent) | Target utilization for read/write autoscaling capacity | `number` | `70` | no |
+| <a name="input_ttl_attribute_name"></a> [ttl\_attribute\_name](#input\_ttl\_attribute\_name) | n/a | `string` | `null` | no |
+| <a name="input_write_capacity"></a> [write\_capacity](#input\_write\_capacity) | n/a | `number` | `5` | no |
+
+## Outputs
+
+No outputs.
+<!-- END_TF_DOCS -->
