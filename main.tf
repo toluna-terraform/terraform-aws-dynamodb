@@ -15,8 +15,8 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
   range_key      = var.primary_sort_key
   billing_mode   = var.billing_mode
 
-  read_capacity =  var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
-  write_capacity =  var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
+  read_capacity  = var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
+  write_capacity = var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
 
   attribute {
     name = var.primary_key
