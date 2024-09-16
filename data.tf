@@ -1,9 +1,7 @@
-data "aws_s3_bucket_objects" "get_dump_list" {
+data "aws_s3_objects" "get_dump_list" {
   bucket = "${var.app_name}-${var.env_type}-dynamodb-dumps"
   prefix = "${var.env_name}/dynamodb-${var.app_name}-${var.env_name}.json"
 }
-
-
 
 data "template_file" "dynamo_backup" {
   template = "${file("${path.module}/files/dynamo_backup.tpl")}"
@@ -35,4 +33,3 @@ data "template_file" "dynamo_restore" {
     aws_dynamodb_table.basic-dynamodb-table
   ]
 }
-

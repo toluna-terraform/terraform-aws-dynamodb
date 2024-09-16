@@ -57,11 +57,11 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     for_each = var.global_secondary_indeces
     iterator = index
     content {
-      name = index.value.name
-      hash_key = index.value.hash_key
-      range_key = try(index.value.range_key, null)
-      read_capacity =  var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
-      write_capacity =  var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
+      name               = index.value.name
+      hash_key           = index.value.hash_key
+      range_key          = try(index.value.range_key, null)
+      read_capacity      = var.billing_mode == "PROVISIONED" ? var.index_read_capacity :  null
+      write_capacity     = var.billing_mode == "PROVISIONED" ? var.index_write_capacity :  null
       projection_type    = try(index.value.projection_type, "ALL")
       non_key_attributes = try(index.value.projection_type, "ALL") == "INCLUDE" ? try(index.value.non_key_attributes, null) : null
     }
@@ -81,10 +81,11 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     Environment = local.env_name
   }
 }
-
-
+###################################################################
+################### DYNAMODB TABLE AUTO SCALING ###################
+###################################################################
 resource "aws_appautoscaling_target" "dynamodb_table_read_target" {
-  count = var.autoscaling_enabled ? 1 : 0
+  count              = var.autoscaling_enabled ? 1 : 0
   max_capacity       = var.max_read_capacity
   min_capacity       = var.read_capacity
   resource_id        = "table/${local.table_name}"
@@ -93,7 +94,7 @@ resource "aws_appautoscaling_target" "dynamodb_table_read_target" {
 }
 
 resource "aws_appautoscaling_policy" "dynamodb_table_read_policy" {
-  count = var.autoscaling_enabled ? 1 : 0
+  count              = var.autoscaling_enabled ? 1 : 0
   name               = "DynamoDBReadCapacityUtilization:${aws_appautoscaling_target.dynamodb_table_read_target[count.index].resource_id}"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.dynamodb_table_read_target[count.index].resource_id
@@ -110,7 +111,7 @@ resource "aws_appautoscaling_policy" "dynamodb_table_read_policy" {
 }
 
 resource "aws_appautoscaling_target" "dynamodb_table_write_target" {
-  count = var.autoscaling_enabled ? 1 : 0
+  count              = var.autoscaling_enabled ? 1 : 0
   max_capacity       = var.max_write_capacity
   min_capacity       = var.write_capacity
   resource_id        = "table/${local.table_name}"
@@ -119,7 +120,7 @@ resource "aws_appautoscaling_target" "dynamodb_table_write_target" {
 }
 
 resource "aws_appautoscaling_policy" "dynamodb_table_write_policy" {
-  count = var.autoscaling_enabled ? 1 : 0
+  count              = var.autoscaling_enabled ? 1 : 0
   name               = "DynamoDBWriteCapacityUtilization:${aws_appautoscaling_target.dynamodb_table_write_target[count.index].resource_id}"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.dynamodb_table_write_target[count.index].resource_id
@@ -134,7 +135,61 @@ resource "aws_appautoscaling_policy" "dynamodb_table_write_policy" {
     target_value = var.target_utilization_percent
   }
 }
+#####################################################################
+################### DYNAMODB INDECES AUTO SCALING ###################
+#####################################################################
+resource "aws_appautoscaling_target" "global_secondary_index_read_target" {
+  count              = var.autoscaling_enabled ? length(var.global_secondary_indeces) : 0
+  max_capacity       = var.index_read_max_capacity
+  min_capacity       = var.index_read_min_capacity
+  resource_id        = "table/${aws_dynamodb_table.basic-dynamodb-table.name}/index/${var.global_secondary_indeces[count.index].name}"
+  scalable_dimension = "dynamodb:index:ReadCapacityUnits"
+  service_namespace  = "dynamodb"
+}
 
+resource "aws_appautoscaling_target" "global_secondary_index_write_target" {
+  count              = var.autoscaling_enabled ? length(var.global_secondary_indeces) : 0
+  max_capacity       = var.index_write_max_capacity
+  min_capacity       = var.index_write_min_capacity
+  resource_id        = "table/${aws_dynamodb_table.basic-dynamodb-table.name}/index/${var.global_secondary_indeces[count.index].name}"
+  scalable_dimension = "dynamodb:index:WriteCapacityUnits"
+  service_namespace  = "dynamodb"
+}
+
+resource "aws_appautoscaling_policy" "global_secondary_index_read_policy" {
+  count              = var.autoscaling_enabled ? length(var.global_secondary_indeces) : 0
+  name               = "global-secondary-index-read-scaling-policy"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.global_secondary_index_read_target[count.index].resource_id
+  scalable_dimension = aws_appautoscaling_target.global_secondary_index_read_target[count.index].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.global_secondary_index_read_target[count.index].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "DynamoDBReadCapacityUtilization"
+    }
+    target_value = var.indeces_table_target_utilization_percent
+  }
+}
+
+resource "aws_appautoscaling_policy" "global_secondary_index_write_policy" {
+  count              = var.autoscaling_enabled ? length(var.global_secondary_indeces) : 0
+  name               = "global-secondary-index-write-scaling-policy"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.global_secondary_index_write_target[count.index].resource_id
+  scalable_dimension = aws_appautoscaling_target.global_secondary_index_write_target[count.index].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.global_secondary_index_write_target[count.index].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "DynamoDBWriteCapacityUtilization"
+    }
+    target_value = var.indeces_table_target_utilization_percent
+  }
+}
+###################################################################
+################### DYNAMODB BACKUP AND RESTORE ###################
+###################################################################
 resource "null_resource" "db_backup" {
   count = var.backup_on_destroy ? 1 : 0
   triggers = {
