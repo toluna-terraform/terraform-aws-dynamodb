@@ -17,6 +17,10 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
 
   read_capacity  = var.billing_mode == "PROVISIONED" ? var.read_capacity :  null
   write_capacity = var.billing_mode == "PROVISIONED" ? var.write_capacity :  null
+  
+  point_in_time_recovery {
+    enabled = var.backup
+  }
 
   attribute {
     name = var.primary_key
@@ -74,6 +78,10 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
       enabled        = true
       attribute_name = var.ttl_attribute_name
     }
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 
   tags = {
@@ -186,37 +194,4 @@ resource "aws_appautoscaling_policy" "global_secondary_index_write_policy" {
     }
     target_value = var.indeces_table_target_utilization_percent
   }
-}
-###################################################################
-################### DYNAMODB BACKUP AND RESTORE ###################
-###################################################################
-resource "null_resource" "db_backup" {
-  count = var.backup_on_destroy ? 1 : 0
-  triggers = {
-    name = "${aws_dynamodb_table.basic-dynamodb-table.name}",
-    backup_file = "${data.template_file.dynamo_backup.rendered}"
-  }
-
-  provisioner "local-exec" {
-    when       = destroy
-    on_failure = fail
-    command    = "${path.module}/files/${self.triggers.backup_file}"
-  }
-  depends_on = [
-    aws_dynamodb_table.basic-dynamodb-table,data.template_file.dynamo_backup
-  ]
-}
-
-resource "null_resource" "db_restore" {
-  count = var.restore_on_create ? 1 : 0
-  triggers = {
-    name = "${aws_dynamodb_table.basic-dynamodb-table.name}"
-  }
-  provisioner "local-exec" {
-    when    = create
-    command = "${path.module}/files/${data.template_file.dynamo_restore.rendered}"
-  }
-  depends_on = [
-    aws_dynamodb_table.basic-dynamodb-table,data.template_file.dynamo_restore,aws_appautoscaling_policy.dynamodb_table_write_policy,aws_appautoscaling_policy.dynamodb_table_read_policy
-  ]
 }
